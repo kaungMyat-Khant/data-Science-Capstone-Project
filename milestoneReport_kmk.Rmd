@@ -9,7 +9,7 @@ output: html_document
 knitr::opts_chunk$set(echo = FALSE,
                       warning = FALSE,
                       message = FALSE,
-                      comment = TRUE)
+                      comment = "")
 ```
 
 ## R Markdown  
@@ -252,12 +252,12 @@ trigram %>%
 ## Appendix
 
 ```{r ref.label=knitr::all_labels(), echo=TRUE, eval=FALSE}
-## get more memory
+### get more memory----
 rm(list = ls()) #-- remove object in environment
 gc(full = TRUE) #-- clean memory
 gc(reset = TRUE)
 
-## download data if necessary
+### download data if necessary----
 fileUrl <- "https://d396qusza40orc.cloudfront.net/dsscapstone/dataset/Coursera-SwiftKey.zip"
 
 if(!file.exists("data")) {
@@ -270,23 +270,23 @@ if(!file.exists("data/final/en_US")) {
     unzip(tempFile, exdir = "data")
 }
 
-## read data
-### read the blogs data
+### read data----
+### read the blogs data----
 con <- file("data/final/en_US/en_US.blogs.txt", open = "r")
 blogs <- readLines(con)
 close(con)  
 
-### read the news data
+### read the news data----
 con <- file("data/final/en_US/en_US.news.txt", open = "r")
 news <- readLines(con)
 close(con)  
 
-### read the tweets data
+### read the tweets data----
 con <- file("data/final/en_US/en_US.twitter.txt", open = "r")
 tweets <- readLines(con)
 close(con)
 
-## Libraries
+### Libraries----
 library(dplyr)
 library(tidyr)
 library(ggplot2)
@@ -294,27 +294,27 @@ library(tm)
 library(knitr)
 library(tidytext)
 
-# Summarize data
-## File size 
+### Summarize data----
+### File size---- 
 Size <- c(blogs = format(object.size(blogs), units = "Mb"),
   news = format(object.size(news), units = "Mb"),
   tweets = format(object.size(tweets), units = "Mb"))
 gc()
 
-## Number of lines
+### Number of lines----
 Lines <- c(blogs = length(blogs),
            news = length(news),
            tweets = length(tweets))
 gc()
 
 
-## Number of characters
+### Number of characters------
 Characters <- c(blogs = sum(sapply(blogs, nchar)),
                 news = sum(sapply(news, nchar)),
                 tweets = sum(sapply(blogs, nchar)))
 gc()
 
-## Numbers of words
+### Numbers of words----
 wordCount <- function(x) {
   length(unlist(strsplit(x, split = " ")))
 }
@@ -324,10 +324,10 @@ Words <- c(blogs = wordCount(blogs),
 
 desdf <- data.frame(Lines, Characters,Words,Size)
 
-## Summary table
+### Summary table----
 desdf %>% kable(align = c("r","r","r","r"))
 
-## Word per line
+### Word per line----
 wordPerLine <- function(x) {
     sapply(strsplit(x, split = " "), length)
 }
@@ -362,10 +362,10 @@ allHist <- ggplot(data = data.frame(wpl=c(blogs_wpl,news_wpl,tweets_wpl)),
          title = "File: all")+
     theme_bw()
 
-## plots in one grid
+### plots in one grid------
 cowplot::plot_grid(blogHist, newsHist, tweetsHist, allHist)
 
-## word per line table setup
+### word per line table setup------
 max <- max(length(blogs_wpl),length(news_wpl), length(tweets_wpl))
 length(blogs_wpl) <- max
 length(news_wpl) <- max
@@ -377,7 +377,7 @@ words_per_line <- data.frame(blogs = blogs_wpl,
 rm("max")
 gc()
 
-## word per line table
+### word per line table----
 words_per_line %>% 
     summarise(across(everything(), list(Mean = mean, SD = sd, 
                                         Median = median, IQR = IQR,
@@ -391,8 +391,8 @@ words_per_line %>%
     values_to = "value") %>%
     pivot_wider(names_from = statistic, values_from = value)
 
-# Exploratory analysis
-## sample data
+### Exploratory analysis------
+### sample data-----
 set.seed(1000)
 blogsSample <- sample(blogs, size = 1000)
 newsSample <- sample(news, size = 1000)
@@ -400,7 +400,7 @@ tweetsSample <- sample(tweets, size = 1000)
 dataSample <- c(blogsSample, newsSample, tweetsSample)
 txt <- dataSample
 
-## clean data
+### clean data--------
 txt <- VectorSource(txt) ##--create vector source for Copora
 txt <- Corpus(txt) ##-- create Copora
 txt <- tm_map(txt, content_transformer(tolower)) #- to lower case
@@ -409,13 +409,13 @@ txt <- tm_map(txt, removePunctuation) #- remove the punctuation
 txt <- tm_map(txt, removeWords, stopwords("english")) #- remove stopword
 txt <- tm_map(txt, stripWhitespace) #- remove white space
 
-## document term matrix
+### document term matrix------
 doc.matrix <- TermDocumentMatrix(txt) #- term document matrix created
 m <- as.matrix(doc.matrix) #- convert to matirx
 v <- sort(rowSums(m),decreasing = T); v #- convert to vector of word and their frequency
 df <- data.frame(word = names(v), freq = v)
 
-## word occurrence
+### word occurrence---------
 df %>% 
   arrange(desc(freq)) %>% 
   slice_head(n = 10) %>% 
@@ -426,14 +426,14 @@ df %>%
        title = "Top 10 most frequent words in sample text")+
   theme_bw()
 
-# N-grams
+### N-grams--------
 bigram <- data.frame(txt = as.character(txt)) %>% 
     unnest_tokens(output = bigram, input = txt, token = "ngrams", n=2)
 trigram <- data.frame(txt = as.character(txt)) %>% 
     unnest_tokens(output = trigram, input = txt, token = "ngrams", n=3)
 
 
-## Bigram
+### Bigram--------
 bigram %>% 
     count(bigram, sort = T) %>% 
     slice_head(n = 20) %>% 
@@ -443,7 +443,7 @@ bigram %>%
     theme_minimal()+
     theme(axis.text.x = element_text(angle = 90))
 
-## Trigram
+### Trigram--------
 trigram %>% 
     count(trigram, sort = T) %>% 
     slice_head(n = 20) %>% 
