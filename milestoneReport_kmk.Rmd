@@ -36,6 +36,419 @@ if(!file.exists("data/final/en_US")) {
 ```
 
 
+```{r readData, include=FALSE}
+## read the blogs data
+con <- file("data/final/en_US/en_US.blogs.txt", open = "r")
+blogs <- readLines(con)
+close(con)  
+
+## read the news data
+con <- file("data/final/en_US/en_US.news.txt", open = "r")
+news <- readLines(con)
+close(con)  
+
+## read the tweets data
+con <- file("data/final/en_US/en_US.twitter.txt", open = "r")
+tweets <- readLines(con)
+close(con)
+```
+
+
+```{r library, include=FALSE}
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(tm)
+library(knitr)
+library(tidytext)
+```
+
+
+```{r summarySetup, include=FALSE}
+## File size 
+Size <- c(blogs = format(object.size(blogs), units = "Mb"),
+  news = format(object.size(news), units = "Mb"),
+  tweets = format(object.size(tweets), units = "Mb"))
+gc()
+
+## Number of lines
+Lines <- c(blogs = length(blogs),
+           news = length(news),
+           tweets = length(tweets))
+gc()
+
+
+## Number of characters
+Characters <- c(blogs = sum(sapply(blogs, nchar)),
+                news = sum(sapply(news, nchar)),
+                tweets = sum(sapply(blogs, nchar)))
+gc()
+
+## Numbers of words
+wordCount <- function(x) {
+  length(unlist(strsplit(x, split = " ")))
+}
+Words <- c(blogs = wordCount(blogs),
+           news = wordCount(news),
+           tweets = wordCount(tweets))
+
+desdf <- data.frame(File = names(Lines),Lines, Characters,Words,Size)
+```
+
+
+```{r summarytab}
+desdf %>% kable(row.names = F, align = c("l","r","r","r","r"))
+```
+
+
+```{r histWPLSetup, include=FALSE}
+wordPerLine <- function(x) {
+    sapply(strsplit(x, split = " "), length)
+}
+
+
+blogs_wpl <-  wordPerLine(blogs)
+news_wpl <-  wordPerLine(news)
+tweets_wpl <- wordPerLine(tweets)
+
+blogHist <- ggplot(data = data.frame(wpl=blogs_wpl), aes(wpl))+ 
+    geom_histogram(fill = "navy", binwidth = 1)+
+    labs(x = "Number of Words per line",
+         title = "File: blogs")+
+    theme_bw()
+
+newsHist <- ggplot(data = data.frame(wpl=news_wpl), aes(wpl))+ 
+    geom_histogram(fill="orange", binwidth = 1)+
+    labs(x = "Number of Words per line",
+         title = "File: news")+
+    theme_bw()
+
+tweetsHist <- ggplot(data = data.frame(wpl=tweets_wpl), aes(wpl))+ 
+    geom_histogram(fill="skyblue", binwidth = 1)+
+    labs(x = "Number of Words per line",
+         title = "File: tweets")+
+    theme_bw()
+
+allHist <- ggplot(data = data.frame(wpl=c(blogs_wpl,news_wpl,tweets_wpl)), 
+                    aes(wpl))+ 
+    geom_histogram(fill="skyblue", binwidth = 1)+
+    labs(x = "Number of Words per line",
+         title = "File: all")+
+    theme_bw()
+```
+
+
+```{r histWPL, include=TRUE}
+cowplot::plot_grid(blogHist, newsHist, tweetsHist, allHist)
+```
+
+
+```{r summaryWPLSetup, include=FALSE}
+max <- max(length(blogs_wpl),length(news_wpl), length(tweets_wpl))
+length(blogs_wpl) <- max
+length(news_wpl) <- max
+length(tweets_wpl) <- max
+
+words_per_line <- data.frame(blogs = blogs_wpl,
+                             news = news_wpl,
+                             tweets = tweets_wpl)
+rm("max")
+gc()
+```
+
+
+```{r summaryWPL, include=TRUE}
+words_per_line %>% 
+    summarise(across(everything(), list(Mean = mean, SD = sd, 
+                                        Median = median, IQR = IQR,
+                                        Max = max, Min = min), 
+                     na.rm = T)) %>%
+    mutate(across(c(ends_with("Mean"), ends_with("SD")), round)) %>% 
+    pivot_longer(
+    cols = everything(),
+    names_to = c("File", "statistic"),
+    names_sep = "_",
+    values_to = "value") %>%
+    pivot_wider(names_from = statistic, values_from = value) %>% 
+    kable(row.names = F, align = c("l","r","r","r","r","r","r"))
+```
+
+
+## Exploratory Data Analysis and Ngrams
+
+
+```{r sampleData, include=FALSE}
+set.seed(1000)
+blogsSample <- sample(blogs, size = 1000)
+newsSample <- sample(news, size = 1000)
+tweetsSample <- sample(tweets, size = 1000)
+dataSample <- c(blogsSample, newsSample, tweetsSample)
+txt <- dataSample
+```
+
+```{r cleanText, include=FALSE}
+txt <- VectorSource(txt) ##--create vector source for Copora
+txt <- Corpus(txt) ##-- create Copora
+txt <- tm_map(txt, content_transformer(tolower)) #- to lower case
+txt <- tm_map(txt, removeNumbers) #- remove the numbers in text
+txt <- tm_map(txt, removePunctuation) #- remove the punctuation
+txt <- tm_map(txt, removeWords, stopwords("english")) #- remove stopword
+txt <- tm_map(txt, stripWhitespace) #- remove white space
+```
+
+
+```{r matrix, include=FALSE}
+doc.matrix <- TermDocumentMatrix(txt) #- term document matrix created
+m <- as.matrix(doc.matrix) #- convert to matirx
+v <- sort(rowSums(m),decreasing = T); v #- convert to vector of word and their frequency
+
+df <- data.frame(word = names(v), freq = v)
+```
+
+
+```{r wordOccurence, include=TRUE}
+df %>% 
+  arrange(desc(freq)) %>% 
+  slice_head(n = 10) %>% 
+  ggplot(aes(reorder(word,-freq), freq))+
+  geom_col(fill = "purple4")+
+  labs(x ="Words", 
+       y = "Frequency", 
+       title = "Top 10 most frequent words in sample text")+
+  theme_bw()
+```
+
+
+```{r ngram, include=FALSE}
+bigram <- data.frame(txt = as.character(txt)) %>% 
+    unnest_tokens(output = bigram, input = txt, token = "ngrams", n=2)
+trigram <- data.frame(txt = as.character(txt)) %>% 
+    unnest_tokens(output = trigram, input = txt, token = "ngrams", n=3)
+```
+
+```{r bigram, include=TRUE}
+bigram %>% 
+    count(bigram, sort = T) %>% 
+    slice_head(n = 20) %>% 
+    ggplot(aes(reorder(bigram,-n),n))+
+    geom_col(fill = "steelblue")+
+    labs(x = "Bigrams", y = "Frequency")+
+    theme_minimal()+
+    theme(axis.text.x = element_text(angle = 90))
+```
+
+
+```{r}
+trigram %>% 
+    count(trigram, sort = T) %>% 
+    slice_head(n = 20) %>% 
+    ggplot(aes(reorder(trigram,-n),n))+
+    geom_col(fill = "forestgreen")+
+    labs(x = "Trigrams", y = "Frequency")+
+    theme_minimal()+
+    theme(axis.text.x = element_text(angle = 90))
+```
+
 ## Appendix
 
 ```{r ref.label=knitr::all_labels(), echo=TRUE, eval=FALSE}
+## get more memory
+rm(list = ls()) #-- remove object in environment
+gc(full = TRUE) #-- clean memory
+gc(reset = TRUE)
+
+## download data if necessary
+fileUrl <- "https://d396qusza40orc.cloudfront.net/dsscapstone/dataset/Coursera-SwiftKey.zip"
+
+if(!file.exists("data")) {
+    dir.create("data")
+}
+
+if(!file.exists("data/final/en_US")) {
+    tempFile <- tempfile()
+    download.file(fileUrl, tempFile)
+    unzip(tempFile, exdir = "data")
+}
+
+## read data
+### read the blogs data
+con <- file("data/final/en_US/en_US.blogs.txt", open = "r")
+blogs <- readLines(con)
+close(con)  
+
+### read the news data
+con <- file("data/final/en_US/en_US.news.txt", open = "r")
+news <- readLines(con)
+close(con)  
+
+### read the tweets data
+con <- file("data/final/en_US/en_US.twitter.txt", open = "r")
+tweets <- readLines(con)
+close(con)
+
+## Libraries
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(tm)
+library(knitr)
+library(tidytext)
+
+# Summarize data
+## File size 
+Size <- c(blogs = format(object.size(blogs), units = "Mb"),
+  news = format(object.size(news), units = "Mb"),
+  tweets = format(object.size(tweets), units = "Mb"))
+gc()
+
+## Number of lines
+Lines <- c(blogs = length(blogs),
+           news = length(news),
+           tweets = length(tweets))
+gc()
+
+
+## Number of characters
+Characters <- c(blogs = sum(sapply(blogs, nchar)),
+                news = sum(sapply(news, nchar)),
+                tweets = sum(sapply(blogs, nchar)))
+gc()
+
+## Numbers of words
+wordCount <- function(x) {
+  length(unlist(strsplit(x, split = " ")))
+}
+Words <- c(blogs = wordCount(blogs),
+           news = wordCount(news),
+           tweets = wordCount(tweets))
+
+desdf <- data.frame(Lines, Characters,Words,Size)
+
+## Summary table
+desdf %>% kable(align = c("r","r","r","r"))
+
+## Word per line
+wordPerLine <- function(x) {
+    sapply(strsplit(x, split = " "), length)
+}
+
+
+blogs_wpl <-  wordPerLine(blogs)
+news_wpl <-  wordPerLine(news)
+tweets_wpl <- wordPerLine(tweets)
+
+blogHist <- ggplot(data = data.frame(wpl=blogs_wpl), aes(wpl))+ 
+    geom_histogram(fill = "navy", binwidth = 1)+
+    labs(x = "Number of Words per line",
+         title = "File: blogs")+
+    theme_bw()
+
+newsHist <- ggplot(data = data.frame(wpl=news_wpl), aes(wpl))+ 
+    geom_histogram(fill="orange", binwidth = 1)+
+    labs(x = "Number of Words per line",
+         title = "File: news")+
+    theme_bw()
+
+tweetsHist <- ggplot(data = data.frame(wpl=tweets_wpl), aes(wpl))+ 
+    geom_histogram(fill="skyblue", binwidth = 1)+
+    labs(x = "Number of Words per line",
+         title = "File: tweets")+
+    theme_bw()
+
+allHist <- ggplot(data = data.frame(wpl=c(blogs_wpl,news_wpl,tweets_wpl)), 
+                    aes(wpl))+ 
+    geom_histogram(fill="skyblue", binwidth = 1)+
+    labs(x = "Number of Words per line",
+         title = "File: all")+
+    theme_bw()
+
+## plots in one grid
+cowplot::plot_grid(blogHist, newsHist, tweetsHist, allHist)
+
+## word per line table setup
+max <- max(length(blogs_wpl),length(news_wpl), length(tweets_wpl))
+length(blogs_wpl) <- max
+length(news_wpl) <- max
+length(tweets_wpl) <- max
+
+words_per_line <- data.frame(blogs = blogs_wpl,
+                             news = news_wpl,
+                             tweets = tweets_wpl)
+rm("max")
+gc()
+
+## word per line table
+words_per_line %>% 
+    summarise(across(everything(), list(Mean = mean, SD = sd, 
+                                        Median = median, IQR = IQR,
+                                        Max = max, Min = min), 
+                     na.rm = T)) %>%
+    mutate(across(c(ends_with("Mean"), ends_with("SD")), round)) %>% 
+    pivot_longer(
+    cols = everything(),
+    names_to = c("File", "statistic"),
+    names_sep = "_",
+    values_to = "value") %>%
+    pivot_wider(names_from = statistic, values_from = value)
+
+# Exploratory analysis
+## sample data
+set.seed(1000)
+blogsSample <- sample(blogs, size = 1000)
+newsSample <- sample(news, size = 1000)
+tweetsSample <- sample(tweets, size = 1000)
+dataSample <- c(blogsSample, newsSample, tweetsSample)
+txt <- dataSample
+
+## clean data
+txt <- VectorSource(txt) ##--create vector source for Copora
+txt <- Corpus(txt) ##-- create Copora
+txt <- tm_map(txt, content_transformer(tolower)) #- to lower case
+txt <- tm_map(txt, removeNumbers) #- remove the numbers in text
+txt <- tm_map(txt, removePunctuation) #- remove the punctuation
+txt <- tm_map(txt, removeWords, stopwords("english")) #- remove stopword
+txt <- tm_map(txt, stripWhitespace) #- remove white space
+
+## document term matrix
+doc.matrix <- TermDocumentMatrix(txt) #- term document matrix created
+m <- as.matrix(doc.matrix) #- convert to matirx
+v <- sort(rowSums(m),decreasing = T); v #- convert to vector of word and their frequency
+df <- data.frame(word = names(v), freq = v)
+
+## word occurrence
+df %>% 
+  arrange(desc(freq)) %>% 
+  slice_head(n = 10) %>% 
+  ggplot(aes(reorder(word,-freq), freq))+
+  geom_col(fill = "purple4")+
+  labs(x ="Words", 
+       y = "Frequency", 
+       title = "Top 10 most frequent words in sample text")+
+  theme_bw()
+
+# N-grams
+bigram <- data.frame(txt = as.character(txt)) %>% 
+    unnest_tokens(output = bigram, input = txt, token = "ngrams", n=2)
+trigram <- data.frame(txt = as.character(txt)) %>% 
+    unnest_tokens(output = trigram, input = txt, token = "ngrams", n=3)
+
+
+## Bigram
+bigram %>% 
+    count(bigram, sort = T) %>% 
+    slice_head(n = 20) %>% 
+    ggplot(aes(reorder(bigram,-n),n))+
+    geom_col(fill = "steelblue")+
+    labs(x = "Bigrams", y = "Frequency")+
+    theme_minimal()+
+    theme(axis.text.x = element_text(angle = 90))
+
+## Trigram
+trigram %>% 
+    count(trigram, sort = T) %>% 
+    slice_head(n = 20) %>% 
+    ggplot(aes(reorder(trigram,-n),n))+
+    geom_col(fill = "forestgreen")+
+    labs(x = "Trigrams", y = "Frequency")+
+    theme_minimal()+
+    theme(axis.text.x = element_text(angle = 90))
