@@ -143,3 +143,62 @@ words_per_line %>%
 
 
 
+# Exploratory data analysis of word occurrence ----------------------------
+
+
+## subset 5% of each text as sample
+sampleSize <- 0.05 ##-- 5% of the data will be taken as sample
+set.seed(005)
+blogsSample <- sample(blogs, size = length(blogs)*sampleSize)
+newsSample <- sample(news, size = length(news)*sampleSize)
+tweetsSample <- sample(tweets, size = length(tweets)*sampleSize)
+
+## clear memory
+rm("blogs","news","tweets","con", "fileUrl")
+gc()
+
+## libraries for EDA
+library(tm)
+library(wordcloud)
+library(tidyverse)
+
+### Preprocess data
+
+#### clean the text
+docs <- VectorSource(tweets)
+docs <- Corpus(docs)
+docs <- tm_map(docs, content_transformer(tolower)) #- to lower case
+docs <- tm_map(docs, removeNumbers) #- remove the numbers in text
+docs <- tm_map(docs, removePunctuation) #- remove the punctuation
+docs <- tm_map(docs, removeWords, stopwords("english")) #- remove stopword
+docs <- tm_map(docs, removeSparseTerms) #- remove sparse terms
+docs <- tm_map(docs, stripWhitespace) #- remove white space
+
+#### explore the text
+##### frequent words
+doc.matrix <- TermDocumentMatrix(docs) #- term document matrix created
+inspect(doc.matrix)
+m <- as.matrix(doc.matrix); m #- convert to matirx
+v <- sort(rowSums(m),decreasing = T); v #- convert to vector of word and their frequency
+
+df <- data.frame(word = names(v), freq = v) #- word cloud data created
+
+
+head(df)
+wordcloud(words = wordcloud.data$word, freq = wordcloud.data$freq,
+          min.freq = 1, max.words = 200,
+          random.order = F, rot.per = 0.35,
+          colors = brewer.pal(8, "BuPu"))
+
+df %>% 
+  arrange(desc(freq)) %>% 
+  slice_head(n = 10) %>% 
+  ggplot(aes(reorder(word,-freq), freq))+
+  geom_col(fill = "purple4")+
+  labs(x ="Words", y = "Frequency", title = "Top 10 most frequent words")+
+  theme_bw()
+
+
+##### Bi grams
+library(tidytext)
+unnest_tokens()
