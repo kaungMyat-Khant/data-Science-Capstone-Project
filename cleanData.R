@@ -141,5 +141,5 @@ words_per_line %>%
     values_to = "value") %>%
     pivot_wider(names_from = statistic, values_from = value)
 
-
+gc()
 
