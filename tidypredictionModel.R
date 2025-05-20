@@ -9,19 +9,19 @@ gc(full = T, reset = T)
 ## Read and sample data
 
 
-set.seed(500)
-con <- file("D:/R/capstone/projectData/en_US/en_US.blogs.txt", open = "r")
-blogs <- sample(readLines(con), size = 500)
+set.seed(50000)
+con <- file("data/final/en_US/en_US.blogs.txt", open = "r")
+blogs <- sample(readLines(con), size = 50000)
 close(con)
 
-set.seed(500)
-con <- file("D:/R/capstone/projectData/en_US/en_US.news.txt", open = "r")
-news <- sample(readLines(con), size = 500)
+set.seed(50000)
+con <- file("data/final/en_US/en_US.news.txt", open = "r")
+news <- sample(readLines(con), size = 50000)
 close(con)
 
-set.seed(500)
-con <- file("D:/R/capstone/projectData/en_US/en_US.twitter.txt", open = "r")
-tweets <- sample(readLines(con), size = 500)
+set.seed(50000)
+con <- file("data/final/en_US/en_US.twitter.txt", open = "r")
+tweets <- sample(readLines(con), size = 50000)
 close(con)
 
 
@@ -58,20 +58,35 @@ bigram <- sampleData %>%
   anti_join(stop_words, by = join_by(word2== word)) 
 
 
+trigram <- sampleData %>% 
+    unnest_tokens(output = trigram, input = text, token = "ngrams", n = 3) %>% 
+    count(data, trigram, sort = TRUE) %>% 
+    bind_tf_idf(trigram, data,n) %>% 
+    arrange(desc(tf_idf)) %>% 
+    separate(trigram, into = c("word1","word2","word3"), sep = " ", remove = F, fill = "right") %>% 
+    anti_join(stop_words, by = join_by(word1 == word)) %>% 
+    anti_join(stop_words, by = join_by(word2 == word)) %>% 
+    anti_join(stop_words, by = join_by(word3 == word))
+
+
 predictWord <- function(word,n=1){
   word <- str_to_lower(as.character(word))
-  if(word %in% bigram$word1) {
-    prediction <- bigram %>% 
-      filter(word1 == word) %>% 
-      slice_max(order_by = tf_idf, n = n, with_ties = F) %>% 
-      pull(word2)
-    paste("The word",word,"could be followed by: ",paste(prediction, collapse = ","))
-  } else {return(word)}
+  word <- str_extract(word, "[a-z]+$")
+  if(word %in% trigram$word1) {
+          prediction <- trigram %>% 
+              filter(word1 == word) %>% 
+              slice_max(order_by = tf_idf, n = n, with_ties = F) %>% 
+              pull(word2)
+          paste("Your word",word, "could be followed by: ",paste(prediction, collapse = ","))
+      } else if(word %in% trigram$word2) {
+          prediction <- trigram %>% 
+              filter(word2 == word) %>% 
+              slice_max(order_by = tf_idf, n = n, with_ties = F) %>% 
+              pull(word3)
+          paste("Your word",word, "could be followed by: ",paste(prediction, collapse = ","))
+      } else return(word)
 }
-predictWord("city",5)
 
+head(sentences)
+predictWord("bought", n = 5)
 
-bigram %>% 
-  filter(word1 == "happy") %>% 
-  slice_max(order_by = tf_idf, n = 3, with_ties = FALSE) %>% 
-  pull(word2)
