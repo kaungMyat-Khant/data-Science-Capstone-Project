@@ -148,10 +148,10 @@ words_per_line %>%
 
 
 ## subset 5% of each text as sample
-set.seed(5000)
-blogsSample <- sample(blogs, size = 5000)
-newsSample <- sample(news, size = 5000)
-tweetsSample <- sample(tweets, size = 5000)
+set.seed(50000)
+blogsSample <- sample(blogs, size = 50000)
+newsSample <- sample(news, size = 50000)
+tweetsSample <- sample(tweets, size = 50000)
 dataSample <- c(blogsSample, newsSample, tweetsSample)
 
 ## clear memory
@@ -209,8 +209,15 @@ df %>%
 ##### Bi grams
 library(tidytext)
 
+unigram <- data.frame(txt = as.character(txt)) %>% 
+    unnest_tokens(output = unigram, input = txt, token = "ngrams", n= 1)
 bigram <- data.frame(txt = as.character(txt)) %>% 
-    unnest_tokens(output = bigram, input = txt, token = "ngrams", n=2)
+    unnest_tokens(output = bigram, input = txt, token = "ngrams", n = 2)
+trigram <- data.frame(txt = as.character(txt)) %>% 
+    unnest_tokens(output = trigram, input = txt, token = "ngrams", n= 3)
+quadgram <- data.frame(txt = as.character(txt)) %>% 
+    unnest_tokens(output = quadgram, input = txt, token = "ngrams", n= 4)
+
 bigram %>% 
     count(bigram, sort = T) %>% 
     slice_head(n = 20) %>% 
@@ -220,22 +227,39 @@ bigram %>%
     theme_minimal()+
     theme(axis.text.x = element_text(angle = 90))
 
-saveRDS(bigram, file = "bigram.RDS")
+unigramdf <- unigram %>% count(unigram)  %>% arrange(desc(n))
+bigramdf <- bigram %>% count(bigram) %>% arrange(desc(n)) %>% separate(bigram, sep = " ", into = c("word1","word2"))
+trigramdf <- trigram %>% count(trigram) %>% arrange(desc(n)) %>% separate(bigram, sep = " ", into = c("word1","word2","word3"))
+quadgramdf <- quadgram %>% count(quadgram) %>% arrange(desc(n))%>% separate(bigram, sep = " ", into = c("word1","word2","word3","word4"))
+
+
 bigram_prob <- bigram %>% 
     count(bigram, sort = T) %>% 
     separate(bigram, sep = " ", into = c("word1","word2")) %>% 
     mutate(prob = n/sum(n))
 
-predictNext <- function(word) {
+trigram_prob <- trigram %>% 
+    count(trigram, sort = T) %>% 
+    separate(trigram, sep = " ", into = c("word1","word2", "word3")) %>% 
+    mutate(prob = n/sum(n))
+
+quadgram_prob <- quadgram %>% 
+    count(quadgram, sort = T) %>% 
+    separate(quadgram, sep = " ", into = c("word1","word2", "word3")) %>% 
+    mutate(prob = n/sum(n))
+predictNext <- function(word, n = c(1,2,3)) {
     library(dplyr)
+    
     word <- as.character(word)
-    if(word %in% bigram_prob$word1) {
-        bigram_prob %>% 
-            filter(word1 == word) %>% 
-            arrange(desc(prob)) %>%
-            slice_head(n=1) %>% 
-            pull(word2)
-    } else print("Word not found in bigram")
+    if(n == 3) {
+        if(word %in% bigram_prob$word1) {
+            bigram_prob %>% 
+                filter(word1 == word) %>% 
+                arrange(desc(prob)) %>%
+                slice_head(n=1) %>% 
+                pull(word2)
+        } else print("Word not found in bigram")
+    } else
     
 }    
 predictNext("sex")
