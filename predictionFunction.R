@@ -10,7 +10,8 @@ load("chosenVocab.RData")
 
 # Libraries ---------------------------------------------------------------
 
-library(tidyverse)
+library(dplyr)
+library(ggplot2)
 library(tidytext)
 library(knitr)
 
@@ -165,6 +166,7 @@ microbenchmark(cleanInput(test))
 microbenchmark(predictWords(input = test, n = 4))
 microbenchmark(generateTable(input = test, n = 4))
 microbenchmark(creatPlot(input = test, n = 4))
+##' Functions take less than 1 second and efficient
 
 ## RAM used
 library(pryr)
@@ -204,3 +206,5 @@ generateTable(input = "A quick brown fox", n = 4)
 creatPlot(input = "A quick brown fox", n = 4)
 mem_after <- mem_used()
 print(mem_after - mem_before)  
+
+##' Around 200MB of RAM Usage
