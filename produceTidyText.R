@@ -79,26 +79,43 @@ save(vocab, file = "chosenVocab.Rdata")
 
 # Ngrams ------------------------------------------------------------------
 
+## Unigram
+
 unigram <- text %>% 
     unnest_tokens(output = ngram, input = txt, token = "ngrams", n = 1) %>%  
-    semi_join(vocab, by = join_by(ngram == word)) 
+    semi_join(vocab, by = join_by(ngram == word)) %>% 
+    count(line, ngram) %>% 
+    bind_tf_idf(term = ngram, document = line, n =n) %>% 
+    arrange(desc(tf_idf))
+    
 save(unigram, file = "unigram.RData")
 
 
+## Bigram
+
 bigram <- text %>% 
     unnest_tokens(output = ngram, input = txt, token = "ngrams", n= 2) %>% 
+    count(line, ngram) %>% 
+    bind_tf_idf(term = ngram, document = line, n =n) %>% 
+    arrange(desc(tf_idf)) %>% 
     separate(col = ngram, 
              into = c("word1","word2"), 
              sep = " ",
              remove = F, 
              fill = "right") %>%  
     semi_join(vocab, by = join_by(word1 == word)) %>%  
-    semi_join(vocab, by = join_by(word2 == word))
+    semi_join(vocab, by = join_by(word2 == word)) 
+    
 save(bigram, file = "bigram.RData")
 
 
+## Trigram
+
 trigram <- text %>% 
     unnest_tokens(output = ngram, input = txt, token = "ngrams", n= 3) %>% 
+    count(line, ngram) %>% 
+    bind_tf_idf(term = ngram, document = line, n =n) %>% 
+    arrange(desc(tf_idf)) %>%
     separate(col = ngram, 
              into = c("word1","word2","word3"), 
              sep = " ",
@@ -106,5 +123,49 @@ trigram <- text %>%
              fill = "right") %>%  
     semi_join(vocab, by = join_by(word1 == word)) %>%  
     semi_join(vocab, by = join_by(word2 == word)) %>%  
-    semi_join(vocab, by = join_by(word3 == word))
+    semi_join(vocab, by = join_by(word3 == word))  
+    
 save(trigram, file = "trigram.RData")
+
+
+## Quadgram
+
+quadgram <- text %>% 
+    unnest_tokens(output = ngram, input = txt, token = "ngrams", n= 4) %>% 
+    count(line, ngram) %>% 
+    bind_tf_idf(term = ngram, document = line, n =n) %>% 
+    arrange(desc(tf_idf)) %>%
+    separate(col = ngram, 
+             into = c("word1","word2","word3","word4"), 
+             sep = " ",
+             remove = F, 
+             fill = "right") %>%  
+    semi_join(vocab, by = join_by(word1 == word)) %>%  
+    semi_join(vocab, by = join_by(word2 == word)) %>%  
+    semi_join(vocab, by = join_by(word3 == word)) %>% 
+    semi_join(vocab, by = join_by(word4 == word))
+
+save(quadgram, file = "quadgram.RData")
+
+## Pentagram
+
+pentagram <- text %>% 
+    unnest_tokens(output = ngram, input = txt, token = "ngrams", n= 5) %>% 
+    count(line, ngram) %>% 
+    bind_tf_idf(term = ngram, document = line, n =n) %>% 
+    arrange(desc(tf_idf)) %>%
+    separate(col = ngram, 
+             into = c("word1","word2","word3","word4","word5"), 
+             sep = " ",
+             remove = F, 
+             fill = "right") %>%  
+    semi_join(vocab, by = join_by(word1 == word)) %>%  
+    semi_join(vocab, by = join_by(word2 == word)) %>%  
+    semi_join(vocab, by = join_by(word3 == word)) %>% 
+    semi_join(vocab, by = join_by(word4 == word)) %>% 
+    semi_join(vocab, by = join_by(word5 == word))
+
+save(pentagram, file = "pentagram.RData")
+
+rm(list = ls(all.names = T))
+gc()
