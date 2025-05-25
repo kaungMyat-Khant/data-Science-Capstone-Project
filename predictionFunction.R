@@ -44,10 +44,10 @@ predictWords <- function(input, n = c(1,2,3,4)){
         input <- cleanInput(input)
         output <- bigram %>% 
             filter(word1 == input) %>% 
-            slice_max(n = 5, order_by = tf_idf, with_ties = T) %>% 
+            slice_max(n = 5, order_by = tf_idf, with_ties = F) %>% 
             select(word2) %>% 
             mutate(predict = paste(word2)) %>% 
-            select(predict) %>% slice_head(n =5)
+            pull(predict) 
         return(output)
     }
     
@@ -55,10 +55,10 @@ predictWords <- function(input, n = c(1,2,3,4)){
         input <- cleanInput(input)
         output <- trigram %>% 
             filter(word1 == input) %>% 
-            slice_max(n = 5, order_by = tf_idf, with_ties = T) %>% 
+            slice_max(n = 5, order_by = tf_idf, with_ties = F) %>% 
             select(word2,word3) %>% 
             mutate(predict = paste(word2,word3)) %>% 
-            select(predict) %>% slice_head(n =5)
+            pull(predict) 
         return(output)
     }
     
@@ -66,10 +66,10 @@ predictWords <- function(input, n = c(1,2,3,4)){
         input <- cleanInput(input)
         output <- quadgram %>% 
             filter(word1 == input) %>% 
-            slice_max(n = 5, order_by = tf_idf, with_ties = T) %>% 
+            slice_max(n = 5, order_by = tf_idf, with_ties = F) %>% 
             select(word2,word3,word4) %>% 
             mutate(predict = paste(word2,word3,word4)) %>% 
-            select(predict) %>% slice_head(n =5)
+            pull(predict) 
         return(output)
     }
     
@@ -77,10 +77,10 @@ predictWords <- function(input, n = c(1,2,3,4)){
         input <- cleanInput(input)
         output <- pentagram %>% 
             filter(word1 == input) %>% 
-            slice_max(n = 5, order_by = tf_idf, with_ties = T) %>% 
+            slice_max(n = 5, order_by = tf_idf, with_ties = F) %>% 
             select(word2,word3,word4,word5) %>% 
             mutate(predict = paste(word2,word3,word4,word5)) %>% 
-            select(predict) %>% slice_head(n =5)
+            pull(predict) 
         return(output)
     }
     
@@ -208,3 +208,4 @@ mem_after <- mem_used()
 print(mem_after - mem_before)  
 
 ##' Around 200MB of RAM Usage
+
