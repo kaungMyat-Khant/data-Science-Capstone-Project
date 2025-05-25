@@ -74,8 +74,8 @@ vocab <- bind_rows(english, contractions) %>% anti_join(bad)
 
 # Save data ---------------------------------------------------------------
 
-save(text, file = "dataSample.Rdata")
-save(vocab, file = "chosenVocab.Rdata")
+saveRDS(text, file = "dataSample.rds")
+saveRDS(vocab, file = "PredictText/chosenVocab.rds")
 
 # Ngrams ------------------------------------------------------------------
 
@@ -88,7 +88,7 @@ unigram <- text %>%
     bind_tf_idf(term = ngram, document = line, n =n) %>% 
     arrange(desc(tf_idf))
     
-save(unigram, file = "unigram.RData")
+saveRDS(unigram, file = "unigram.rds")
 
 
 ## Bigram
@@ -106,7 +106,7 @@ bigram <- text %>%
     semi_join(vocab, by = join_by(word1 == word)) %>%  
     semi_join(vocab, by = join_by(word2 == word)) 
     
-save(bigram, file = "bigram.RData")
+saveRDS(bigram, file = "PredictText/bigram.rds")
 
 
 ## Trigram
@@ -125,7 +125,7 @@ trigram <- text %>%
     semi_join(vocab, by = join_by(word2 == word)) %>%  
     semi_join(vocab, by = join_by(word3 == word))  
     
-save(trigram, file = "trigram.RData")
+saveRDS(trigram, file = "PredictText/trigram.rds")
 
 
 ## Quadgram
@@ -145,7 +145,7 @@ quadgram <- text %>%
     semi_join(vocab, by = join_by(word3 == word)) %>% 
     semi_join(vocab, by = join_by(word4 == word))
 
-save(quadgram, file = "quadgram.RData")
+saveRDS(quadgram, file = "PredictText/quadgram.rds")
 
 ## Pentagram
 
@@ -165,7 +165,7 @@ pentagram <- text %>%
     semi_join(vocab, by = join_by(word4 == word)) %>% 
     semi_join(vocab, by = join_by(word5 == word))
 
-save(pentagram, file = "pentagram.RData")
+saveRDS(pentagram, file = "PredictText/pentagram.rds")
 
 rm(list = ls(all.names = T))
 gc()

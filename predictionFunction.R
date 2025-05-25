@@ -1,11 +1,11 @@
 
 # Load ngrams -------------------------------------------------------------
 
-load("bigram.RData")
-load("trigram.RData")
-load("quadgram.RData")
-load("pentagram.RData")
-load("chosenVocab.RData")
+bigram <- readRDS("PredictText/bigram.rds")
+trigram <- readRDS("PredictText/trigram.rds")
+quadgram <- readRDS("PredictText/quadgram.rds")
+pentagram <- readRDS("PredictText/pentagram.rds")
+vocab <- readRDS("PredictText/chosenVocab.rds")
 
 
 # Libraries ---------------------------------------------------------------
@@ -192,11 +192,11 @@ mem_after <- mem_used()
 print(mem_after - mem_before)  
 
 mem_before <- mem_used()
-load("bigram.RData")
-load("trigram.RData")
-load("quadgram.RData")
-load("pentagram.RData")
-load("chosenVocab.RData")
+bigram <- readRDS("PredictText/bigram.rds")
+trigram <- readRDS("PredictText/trigram.rds")
+quadgram <- readRDS("PredictText/quadgram.rds")
+pentagram <- readRDS("PredictText/pentagram.rds")
+vocab <- readRDS("PredictText/chosenVocab.rds")
 library(dplyr)
 library(ggplot2)
 library(tidytext)
