@@ -1,0 +1,77 @@
+---
+title: "Pitch for Shiny Text Prediction App"
+author: "Kaung Myat Khant"
+date: "`r Sys.Date()`"
+output: slidy_presentation
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE,
+                      warning = FALSE,
+                      message = FALSE,
+                      comment = "")
+```
+
+## About the App
+
+This application uses the last English word of your text input. You can predict the upcoming one to four words by selecting the number of words you want to predict. You can access the app [**here**](https://8odfh6-kmk-27.shinyapps.io/PredictText/).
+
+## What is text prediction?
+
+-   Predictive text uses algorithms trained on large amounts of text data to anticipate your next words.
+
+-   Reduces effort in writing by suggesting likely words, improving efficiency in communication.
+
+-   Found in smartphones, email, and search engines, and writing tools like Microsoft Word.
+
+-   My app suggests words to speed up writing and improve accuracy, helping you type more efficiently.
+
+## How does the app work?
+
+- Uses SwiftKey data from blogs, news, and Twitter to understand common phrases.
+
+- Creates word sequences to predict the most likely next words.
+
+- Identifies the most important words (TF-IDF score) in a sentence for better predictions.
+
+- Speeds up writing by suggesting useful words based on real language trends.  
+
+## Output of the App
+
+```{r lib, include=FALSE}
+library(tidyverse)
+df <- readRDS("PredictText/pentagram.rds")
+```
+
+If you put "happy" in the text input, and select 4, the app will return a list of 4 upcoming words with their score of importance.  
+
+```{r tab, include=TRUE}
+
+df %>% 
+        filter(word1 == "happy") %>% 
+        slice_max(n = 5, order_by = tf_idf, with_ties = F) %>% 
+        select(ngram, n, tf_idf) %>% 
+        knitr::kable(col.names = c("Word chunk","Frequency","Importance(TF-IDF score)"),
+              row.names = F, align = c("l","r","r"), digits = 2)
+
+```
+
+## Output of the App  
+
+It also produces a bar graph for the stats.
+
+```{r plot, include=TRUE, fig.height=4}
+df %>% 
+        filter(word1 == "happy") %>% 
+        mutate(tf_idf = round(tf_idf,2)) %>% 
+        slice_max(order_by = tf_idf, n = 5) %>% 
+        slice_head(n = 5) %>% 
+        ggplot(aes(x = reorder(ngram,tf_idf), y = tf_idf))+
+        geom_col(fill = "#2C0C18")+
+        theme_minimal()+
+        labs(title = "Top 5 important word chunks",
+             x = "Word chunks",
+             y = "Word Importance Score (TF-IDF)")+
+        coord_flip()
+```
+
