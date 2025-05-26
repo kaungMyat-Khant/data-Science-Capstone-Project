@@ -34,7 +34,7 @@ This application uses the last English word of your text input. You can predict 
 
 - Identifies the most important words (TF-IDF score) in a sentence for better predictions.
 
-- Speeds up writing by suggesting useful words based on real language trends.  
+- Speeds up writing by suggesting useful words based on real English language trends.  
 
 ## Output of the App
 
