@@ -16,15 +16,15 @@ knitr::opts_chunk$set(echo = FALSE,
 
 This application uses the last English word of your text input. You can predict the upcoming one to four words by selecting the number of words you want to predict. You can access the app [**here**](https://8odfh6-kmk-27.shinyapps.io/PredictText/).
 
-## What is text prediction?
+## Algorithmn for text prediction
 
 -   Predictive text uses algorithms trained on large amounts of text data to anticipate your next words.
 
--   Reduces effort in writing by suggesting likely words, improving efficiency in communication.
+-   The training data is sampled from the English text data provided by SwiftKey.
 
--   Found in smartphones, email, and search engines, and writing tools like Microsoft Word.
+-   [*Tidy principles of tidyverse and tidytext functions*](https://www.tidytextmining.com/) are applied to the data to create N-grams and calculate their Term Frequency-Inverse Document Frequency (TF-IDF) per line.
 
--   My app suggests words to speed up writing and improve accuracy, helping you type more efficiently.
+-   N-grams with the most highest TF-IDF scores are used to predict the next words.
 
 ## How does the app work?
 
@@ -34,7 +34,7 @@ This application uses the last English word of your text input. You can predict 
 
 - Identifies the most important words (TF-IDF score) in a sentence for better predictions.
 
-- Speeds up writing by suggesting useful words based on real English language trends.  
+- Put your words or phrases in the input text box, and choose how many words you want to predict.
 
 ## Output of the App
 
