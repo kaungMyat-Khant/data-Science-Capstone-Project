@@ -2,7 +2,9 @@
 title: "Pitch for Shiny Text Prediction App"
 author: "Kaung Myat Khant"
 date: "`r Sys.Date()`"
-output: slidy_presentation
+output: 
+  slidy_presentation:
+      keep_md = TRUE
 ---
 
 ```{r setup, include=FALSE}
