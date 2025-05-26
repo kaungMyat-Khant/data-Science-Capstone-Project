@@ -58,22 +58,3 @@ df %>%
 
 ```
 
-## Output of the App  
-
-It also produces a bar graph for the stats.
-
-```{r plot, include=TRUE, fig.height=4}
-df %>% 
-        filter(word1 == "happy") %>% 
-        mutate(tf_idf = round(tf_idf,2)) %>% 
-        slice_max(order_by = tf_idf, n = 5) %>% 
-        slice_head(n = 5) %>% 
-        ggplot(aes(x = reorder(ngram,tf_idf), y = tf_idf))+
-        geom_col(fill = "#2C0C18")+
-        theme_minimal()+
-        labs(title = "Top 5 important word chunks",
-             x = "Word chunks",
-             y = "Word Importance Score (TF-IDF)")+
-        coord_flip()
-```
-
